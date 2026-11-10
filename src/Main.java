@@ -1,3 +1,8 @@
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,7 +30,7 @@ public class Main {
                 + "lat=" + lat
                 + "&lon=" + lon
                 + "&limit=" + limit);
-        System.out.println("Итоговый запрос к Yandex API: " + uriRequest);
+        System.out.printf("%nИтоговый запрос к Yandex API: %s%n", uriRequest);
 
 
         HttpClient client = HttpClient.newHttpClient();
@@ -36,7 +41,22 @@ public class Main {
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        System.out.println(response.statusCode());
-        System.out.println(response.body());
+        System.out.printf("Запрос отправлен...%nОтвет сервера: %d.%n%n", response.statusCode());
+        System.out.printf("Тело ответа: %s%n", response.body());
+
+        JsonObject root = JsonParser.parseString(response.body()).getAsJsonObject();
+        int temp = root.get("fact").getAsJsonObject().get("temp").getAsInt();
+        System.out.printf("Текущая температура: %d градусов Цельсия.%n", temp);
+
+        JsonArray days = root.getAsJsonArray("forecasts");
+        double generalTemp = 0;
+        for (JsonElement e : days) {
+            JsonObject obj = e.getAsJsonObject();
+            JsonObject parts = obj.get("parts").getAsJsonObject();
+            JsonObject day = parts.get("day").getAsJsonObject();
+            generalTemp += day.get("temp_avg").getAsDouble();
+        }
+        double generalAvgTemp = generalTemp / limit;
+        System.out.printf("Средняя температура за %d дней: %.1f градусов Цельсия.%n", limit, generalAvgTemp);
     }
 }
