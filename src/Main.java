@@ -1,5 +1,4 @@
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -25,6 +24,10 @@ public class Main {
 
         System.out.println("Введите число дней прогноза:");
         int limit = Integer.parseInt(scanner.nextLine());
+        if (limit <= 0) {
+            System.out.println("Количество дней должно быть больше нуля.");
+            return;
+        }
 
         URI uriRequest = URI.create("https://api.weather.yandex.ru/v2/forecast?"
                 + "lat=" + lat
@@ -49,9 +52,14 @@ public class Main {
         System.out.printf("Текущая температура: %d градусов Цельсия.%n", temp);
 
         JsonArray days = root.getAsJsonArray("forecasts");
+        if (days.size() < limit) {
+            System.out.printf("Недостаточно данных: запрошено %d дней, получено %d.%n", limit, days.size());
+            return;
+        }
+
         double generalTemp = 0;
-        for (JsonElement e : days) {
-            JsonObject obj = e.getAsJsonObject();
+        for (int i = 0; i < limit; i++) {
+            JsonObject obj = days.get(i).getAsJsonObject();
             JsonObject parts = obj.get("parts").getAsJsonObject();
             JsonObject day = parts.get("day").getAsJsonObject();
             generalTemp += day.get("temp_avg").getAsDouble();
